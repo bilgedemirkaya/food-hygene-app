@@ -1,26 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Food Hygiene Ratings</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Your CSS -->
-  <link rel="stylesheet" href="src/css/style.css" />
-</head>
-<body>
-  <header>
-    <h1>Food Hygiene Ratings</h1>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A simple web app to search for food hygiene ratings of restaurants in the UK."
+    />
+    <title>Food Hygiene Ratings</title>
 
-  <main>
-    <!-- ...form and sections as before... -->
-  </main>
+    <!-- Bulma Style Link -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"
+    />
+    <link rel="stylesheet" href="src/css/style.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <footer>
-    <p>&copy; 2025 Food Hygiene App</p>
-  </footer>
+    <!-- JS Scripts -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/main.js"></script>
+  </head>
 
-  <!-- Include the compiled JavaScript from dist/js -->
-  <script src="dist/js/main.js"></script>
-</body>
+  <body>
+    <!-- Page Title -->
+    <header class="has-text-centered">
+      <h1 class="title is-2">Food Hygiene Ratings</h1>
+    </header>
+    <div class="tabs is-centered">
+      <ul>
+        <li class="tab-link is-active" data-tab="home"><a>Home</a></li>
+        <li class="tab-link" data-tab="about"><a>About</a></li>
+      </ul>
+    </div>
+
+    <section class="hero is-fullheight-with-navbar">
+      <div class="hero-body">
+        <div class="container">
+          <div id="tab-content">
+            <!-- Page content will be loaded here dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="content has-text-centered">
+        <p>2025 Food Hygiene App</p>
+      </div>
+    </footer>
+  </body>
 </html>

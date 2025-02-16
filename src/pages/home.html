@@ -1,0 +1,36 @@
+
+      <!-- Search Form -->
+      <section id="search-section" class="box">
+        <h2 class="subtitle is-4">Search for a food hygiene rating</h2>
+        <form id="search-form" class="field">
+          <div class="field">
+            <label for="local-authority-input" class="label">Local Authority:</label>
+            <div class="control">
+              <input type="text" id="local-authority-input" class="input" name="local-authority"
+                placeholder="e.g. London" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="restaurant-name-input" class="label">Restaurant Name:</label>
+            <div class="control">
+              <input type="text" id="restaurant-name-input" class="input" name="restaurant-name"
+                placeholder="e.g. Burger King" required/>
+            </div>
+          </div>
+
+          <div class="control">
+            <button type="submit" class="button is-primary is-fullwidth">
+              Search
+            </button>
+          </div>
+        </form>
+        <div id="error-message" class="notification is-danger is-hidden"></div>
+      </section>
+
+      <!-- Results Section -->
+      <section id="results-section">
+        <div id="results-container" class="columns is-multiline">
+          <!-- Search results will appear here -->
+        </div>
+    </section>

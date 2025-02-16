@@ -1,0 +1,12 @@
+{
+  "name": "food-hygiene-app",
+  "version": "1.0.0",
+  "description": "A food hygiene ratings app",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
