@@ -10,7 +10,7 @@
   justify-content: center;
   gap: 1rem;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 }
 
 .card {
@@ -23,4 +23,15 @@
   gap: 1rem;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.results-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.field {
+  margin-right: auto;
 }

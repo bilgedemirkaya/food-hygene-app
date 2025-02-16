@@ -1,4 +1,4 @@
 const CONFIG = {
-    API_URL: "https://api.ratings.food.gov.uk/establishments"
+    API_URL: "https://api.ratings.food.gov.uk"
   };
 

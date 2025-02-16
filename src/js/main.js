@@ -1,169 +1,221 @@
 document.addEventListener("DOMContentLoaded", () => {
+  let searchFilters = {
+    localAuthority: "",
+    restaurantName: "",
+    pageSize: 5,
+    pageNumber: 1,
+    sortOption: "",
+  };
+
+  setupTabs();
   loadPage("home");
 
-  const tabs = document.querySelectorAll(".tab-link");
-  const tabContent = document.getElementById("tab-content");
-  let pageNumber = 1;
-  const pageSize = 5
-
-  async function loadPage(page) {
-    try {
-      const response = await fetch(`src/pages/${page}.html`);
-      if (!response.ok) throw new Error("Page not found");
-      tabContent.innerHTML = await response.text();
-
-      if (page === "home") {
-        setupSearchForm();
-      }
-    } catch (error) {
-      console.error("Error loading page:", error);
-      tabContent.innerHTML = `<h1 class='title'>404 - Page Not Found</h1><p>The content you requested does not exist.</p>`;
-    }
+  function setupTabs() {
+    document.querySelectorAll(".tab-link").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab-link").forEach(t => t.classList.remove("is-active"));
+        tab.classList.add("is-active");
+        loadPage(tab.getAttribute("data-tab"));
+      });
+    });
   }
 
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      const tabId = tab.getAttribute("data-tab");
-
-      tabs.forEach(t => t.classList.remove("is-active"));
-
-      tab.classList.add("is-active");
-
-      loadPage(tabId);
-    });
-  });
+  function loadPage(page) {
+    fetch(`src/pages/${page}.html`)
+      .then(response => {
+        if (!response.ok) throw new Error("Page not found");
+        return response.text();
+      })
+      .then(html => {
+        document.getElementById("tab-content").innerHTML = html;
+        if (page === "home") setupSearchForm();
+      })
+      .catch(error => {
+        console.error("Error loading page:", error);
+        document.getElementById("tab-content").innerHTML =
+          `<h1 class='title'>404 - Page Not Found</h1><p>The content you requested does not exist.</p>`;
+      });
+  }
 
   function setupSearchForm() {
     const form = document.getElementById("search-form");
+    const resultsContainer = document.getElementById("results-container");
 
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", (e) => {
+      // Get search filters from form inputs
+      searchFilters.localAuthority = document.getElementById("local-authority-input").value.trim();
+      searchFilters.restaurantName = document.getElementById("restaurant-name-input").value.trim();
+
       e.preventDefault();
+      resultsContainer.innerHTML = "";
+      searchFilters.pageNumber = 1;
+      fetchEntities(false);
 
-      
-
-      fetchEntities();
+      form.reset();
     });
   }
 
-  async function fetchEntities() {
-    const errorMessage = document.getElementById("error-message");
+  async function fetchEntities(loadMore = false) {
+    const resultsContainer = document.getElementById("results-container");
+    const ErrMessage = createElement("p", { className: "has-text-centered" });
 
-    const localAuthority = document.getElementById("local-authority-input").value.trim();
-    const restaurantName = document.getElementById("restaurant-name-input").value.trim();
-
-
-    errorMessage.classList.add("hidden");
-    errorMessage.textContent = "There was an error. Please try again.";
-
-    if (!localAuthority) {
-      errorMessage.textContent = "Please provide a valid Local Authority.";
-      errorMessage.classList.remove("hidden");
-      return;
-    }
-
-    const apiUrl = CONFIG.API_URL + `?name=${restaurantName}&address=${localAuthority}&pageSize=${pageSize}&pageNumber=${pageNumber}`;
+    const apiUrl = `${CONFIG.API_URL}/establishments?name=${searchFilters.restaurantName}&address=${searchFilters.localAuthority}&pageSize=${searchFilters.pageSize}&pageNumber=${searchFilters.pageNumber}&sortOptionKey=${searchFilters.sortOption}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: "GET",
-        headers: {
-          "x-api-version": "2",
-          "accept": "application/json",
-        }
+        headers: { "x-api-version": "2", "accept": "application/json" }
       });
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
       const data = await response.json();
 
-      if (data.establishments && data.establishments.length > 0) {
-        renderResults(data.establishments);
+      if (data.establishments?.length) {
+        renderResults(data.establishments, loadMore);
       } else {
-        errorMessage.textContent = "No results found. Try a different query.";
-        errorMessage.classList.remove("hidden");
+        ErrMessage.textContent = `No results found for ${searchFilters.restaurantName} in ${searchFilters.localAuthority}`;
+        resultsContainer.appendChild(ErrMessage);
       }
     } catch (error) {
-      console.error("Fetch error:", error);
-      errorMessage.textContent = `Error fetching data: ${error.message}`;
-      errorMessage.classList.remove("hidden");
+      ErrMessage.textContent = `Error fetching data: ${error.message}`;
+      resultsContainer.appendChild(ErrMessage);
     }
   }
 
-  function renderResults(establishments) {
+  async function renderResults(establishments, loadMore) {
     const resultsContainer = document.getElementById("results-container");
+    let cardsContainer = document.getElementById("cards-container");
 
-    const title_container = document.createElement("div");
-    title_container.classList.add("title-container");
-    const title = document.createElement("h2");
-    title.textContent = "Results";
-    title.classList.add("title");
-
-    title_container.appendChild(title);
-    resultsContainer.appendChild(title_container);
-
-    const cards = document.createElement("div");
-    cards.className = "cards";
-    establishments.forEach((est) => {
-      const card = document.createElement("div");
-      const header = document.createElement("div");
-      header.className = "card-header";
-
-      const name = document.createElement("h3");
-      name.textContent = est.BusinessName;
-      name.classList.add("is-size-3")
-
-      const rating = document.createElement("p");
-      rating.className = "rating";
-      const ratingValue = parseInt(est.RatingValue) || 0;
-      rating.appendChild(renderStars(ratingValue));
-
-      header.appendChild(name);
-      header.appendChild(rating);
-
-      const address = document.createElement("p");
-      address.textContent = `Address: ${est.AddressLine1 || ""}, ${est.PostCode || ""}`;
-
-      card.classList.add("card");
-      card.appendChild(header);
-      card.appendChild(address);
-
-      cards.appendChild(card);
-    });
-
-    resultsContainer.appendChild(cards);
-
-    const loadMoreButton = document.createElement("button");
-    loadMoreButton.className = "button is-success is-outlined hidden is-fullwidth";
-
-    if (establishments.length < pageSize) {
-      loadMoreButton.style.display = "none";
-    }
-    else {
-      loadMoreButton.style.display = "block";
+    if (!loadMore) {
+      // Clear existing results
+      resultsContainer.innerHTML = "";
+      searchFilters.pageNumber = 1;
+      const titleContainer = createElement("div", { className: "title-container" });
+      titleContainer.appendChild(createElement("h2", { className: "title", textContent: 'Results' }));
+      resultsContainer.appendChild(titleContainer);
     }
 
-    loadMoreButton.textContent = "Load More";
-    loadMoreButton.addEventListener("click", () => {
-      pageNumber++;
-      fetchEntities();
+    const sortDropdown = await createSortingDropdown();
+    resultsContainer.appendChild(sortDropdown);
+
+    if (!cardsContainer) {
+      cardsContainer = createElement("div", { id: "cards-container", className: "cards" });
+      resultsContainer.appendChild(cardsContainer);
+    }
+
+
+    // Render each establishment as a card
+    establishments.forEach(est => {
+      const card = createElement("div", { className: "card" });
+      const header = createElement("div", { className: "card-header" });
+
+      const name = createElement("h3", { className: "is-size-3", textContent: est.BusinessName });
+      const rating = createElement("p", { className: "rating" });
+      rating.appendChild(renderStars(parseInt(est.RatingValue) || 0));
+
+      header.append(name, rating);
+      card.append(header, createElement("p", { textContent: `Address: ${est.AddressLine1 || ""}, ${est.PostCode || ""}` }));
+      cardsContainer.appendChild(card);
     });
 
-    resultsContainer.appendChild(loadMoreButton);
+    // Show load more button if there are more results
+    updateLoadMoreButton(establishments.length >= searchFilters.pageSize);
   }
 
-  function renderStars(rating) {
-    const starContainer = document.createElement("div");
-    starContainer.className = "stars";
+  function updateLoadMoreButton(hasMore) {
+    const existingButton = document.getElementById("load-more-btn");
 
-    for (let i = 1; i <= 5; i++) {
-      const star = document.createElement("span");
-      star.textContent = i <= rating ? "★" : "☆";
-      star.classList.add("star");
-      starContainer.appendChild(star);
+    // Remove existing button to create a new one
+    if (existingButton) existingButton.remove();
+
+    if (hasMore) {
+      const loadMoreButton = createElement("button", {
+        id: "load-more-btn",
+        className: "button is-success is-outlined is-fullwidth",
+        textContent: "Load More",
+        onclick: loadMore,
+      });
+
+      document.getElementById("results-container").appendChild(loadMoreButton);
     }
+  }
 
+  function loadMore() {
+    searchFilters.pageNumber++;
+    fetchEntities(true);
+  }
+
+  /** Render rating as star icons */
+  function renderStars(rating) {
+    const starContainer = createElement("div", { className: "stars" });
+    for (let i = 1; i <= 5; i++) {
+      starContainer.appendChild(createElement("span", {
+        className: "star",
+        textContent: i <= rating ? "★" : "☆"
+      }));
+    }
     return starContainer;
   }
+
+  async function createSortingDropdown() {
+    const sortContainer = createElement("div", { className: "field" });
+
+    const label = createElement("label", { className: "label", textContent: "Sort By:" });
+    const control = createElement("div", { className: "control" });
+
+    const selectWrapper = createElement("div", { className: "select" });
+    const select = createElement("select", { id: "sort-option" });
+
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/sortoptions`, {
+            method: "GET",
+            headers: { "x-api-version": "2", "accept": "application/json" }
+        });
+
+        if (!response.ok) throw new Error(`Failed to fetch sorting options: ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.sortOptions) {
+            data.sortOptions.forEach(option => {
+                const opt = createElement("option", { value: option.sortOptionKey, textContent: option.sortOptionName });
+
+                if (option.sortOptionKey === searchFilters.sortOption) {
+                    opt.selected = true;
+                }
+                select.appendChild(opt);
+            });
+        }
+    } catch (error) {
+        console.error("Error fetching sort options:", error);
+    }
+
+    select.addEventListener("change", () => {
+        searchFilters.pageNumber = 1;
+        searchFilters.sortOption = select.value;
+        fetchEntities(false);
+    });
+
+    selectWrapper.appendChild(select);
+    control.appendChild(selectWrapper);
+    sortContainer.append(label, control);
+
+    return sortContainer;
+}
+
+
+function createElement(tag, props = {}) {
+  const element = document.createElement(tag);
+
+  Object.keys(props).forEach(key => {
+    if (key === "onclick") {
+      element.addEventListener("click", props[key]);
+    } else {
+      element[key] = props[key];
+    }
+  });
+  return element;
+}
+
 });
