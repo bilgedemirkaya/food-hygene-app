@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   let searchFilters = {
     localAuthority: "",
     restaurantName: "",
@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
     pageNumber: 1,
     sortOption: "",
   };
+
+  let sortOptions = {};
 
   setupTabs();
   loadPage("home");
@@ -28,7 +30,10 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .then(html => {
         document.getElementById("tab-content").innerHTML = html;
-        if (page === "home") setupSearchForm();
+        if (page === "home") {
+          setupSearchForm();
+          fetchSortingOptions();
+        };
       })
       .catch(error => {
         console.error("Error loading page:", error);
@@ -53,6 +58,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
       form.reset();
     });
+  }
+
+  function setupSortDropdown() {
+    let existingDropdown = document.getElementById("sort-option");
+
+    if (existingDropdown) {
+      return existingDropdown.parentElement;
+  }
+    const selectWrapper = createElement("div", { className: "select rounded" });
+    const select = createElement("select", {
+        id: "sort-option",
+        className: "select",
+        onchange: (e) => {
+            searchFilters.sortOption = e.target.value;
+            let cardsContainer = document.getElementById("cards-container");
+            cardsContainer.innerHTML = "";
+            fetchEntities(false);
+        }
+    });
+
+
+    const defaultOption = createElement("option", { value: "relevance", textContent: "Sort by" });
+    select.appendChild(defaultOption);
+
+    sortOptions.forEach(option => {
+        const opt = createElement("option", { value: option.sortOptionKey, textContent: option.sortOptionName });
+
+        if (option.sortOptionKey === searchFilters.sortOption) {
+            opt.selected = true;
+        }
+        select.appendChild(opt);
+    });
+
+    selectWrapper.appendChild(select);
+
+
+    return selectWrapper;
   }
 
   async function fetchEntities(loadMore = false) {
@@ -88,40 +130,41 @@ document.addEventListener("DOMContentLoaded", () => {
     let cardsContainer = document.getElementById("cards-container");
 
     if (!loadMore) {
-      // Clear existing results
-      resultsContainer.innerHTML = "";
-      searchFilters.pageNumber = 1;
-      const titleContainer = createElement("div", { className: "title-container" });
-      titleContainer.appendChild(createElement("h2", { className: "title", textContent: 'Results' }));
-      resultsContainer.appendChild(titleContainer);
+        resultsContainer.innerHTML = "";
+        searchFilters.pageNumber = 1;
+
+        const titleContainer = createElement("div", { className: "title-container" });
+        titleContainer.appendChild(createElement("h2", { className: "title", textContent: 'Results' }));
+        resultsContainer.appendChild(titleContainer);
     }
 
-    const sortDropdown = await createSortingDropdown();
-    resultsContainer.appendChild(sortDropdown);
+    if (!document.getElementById("sort-option")) {
+      const sortDropdown = setupSortDropdown();
+      resultsContainer.appendChild(sortDropdown);
+  }
 
     if (!cardsContainer) {
-      cardsContainer = createElement("div", { id: "cards-container", className: "cards" });
-      resultsContainer.appendChild(cardsContainer);
+        cardsContainer = createElement("div", { id: "cards-container", className: "cards" });
     }
 
-
-    // Render each establishment as a card
     establishments.forEach(est => {
-      const card = createElement("div", { className: "card" });
-      const header = createElement("div", { className: "card-header" });
+        const card = createElement("div", { className: "card" });
+        const header = createElement("div", { className: "card-header" });
 
-      const name = createElement("h3", { className: "is-size-3", textContent: est.BusinessName });
-      const rating = createElement("p", { className: "rating" });
-      rating.appendChild(renderStars(parseInt(est.RatingValue) || 0));
+        const name = createElement("h3", { className: "is-size-3", textContent: est.BusinessName });
+        const rating = createElement("p", { className: "rating" });
+        rating.appendChild(renderStars(parseInt(est.RatingValue) || 0));
 
-      header.append(name, rating);
-      card.append(header, createElement("p", { textContent: `Address: ${est.AddressLine1 || ""}, ${est.PostCode || ""}` }));
-      cardsContainer.appendChild(card);
+        header.append(name, rating);
+        card.append(header, createElement("p", { textContent: `Address: ${est.AddressLine1 || ""}, ${est.PostCode || ""}` }));
+        cardsContainer.appendChild(card);
     });
 
-    // Show load more button if there are more results
+    resultsContainer.appendChild(cardsContainer);
+
     updateLoadMoreButton(establishments.length >= searchFilters.pageSize);
-  }
+}
+
 
   function updateLoadMoreButton(hasMore) {
     const existingButton = document.getElementById("load-more-btn");
@@ -158,15 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return starContainer;
   }
 
-  async function createSortingDropdown() {
-    const sortContainer = createElement("div", { className: "field" });
-
-    const label = createElement("label", { className: "label", textContent: "Sort By:" });
-    const control = createElement("div", { className: "control" });
-
-    const selectWrapper = createElement("div", { className: "select" });
-    const select = createElement("select", { id: "sort-option" });
-
+  async function fetchSortingOptions() {
     try {
         const response = await fetch(`${CONFIG.API_URL}/sortoptions`, {
             method: "GET",
@@ -178,30 +213,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
 
         if (data.sortOptions) {
-            data.sortOptions.forEach(option => {
-                const opt = createElement("option", { value: option.sortOptionKey, textContent: option.sortOptionName });
-
-                if (option.sortOptionKey === searchFilters.sortOption) {
-                    opt.selected = true;
-                }
-                select.appendChild(opt);
-            });
+          sortOptions = data.sortOptions;
         }
     } catch (error) {
         console.error("Error fetching sort options:", error);
     }
-
-    select.addEventListener("change", () => {
-        searchFilters.pageNumber = 1;
-        searchFilters.sortOption = select.value;
-        fetchEntities(false);
-    });
-
-    selectWrapper.appendChild(select);
-    control.appendChild(selectWrapper);
-    sortContainer.append(label, control);
-
-    return sortContainer;
 }
 
 
