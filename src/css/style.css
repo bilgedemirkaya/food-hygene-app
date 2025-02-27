@@ -1,7 +1,22 @@
-.body {
+
+html, body { height: 100vh; }
+
+body {
   margin: 0;
   padding: 20px;
   box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+.body-full {
+  min-height: calc(100vh - 250px);
+}
+
+.footer {
+  margin-top: 50px;
 }
 
 .title-container {

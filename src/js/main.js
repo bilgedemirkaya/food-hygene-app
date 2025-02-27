@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let sortOptions = {};
 
   setupTabs();
-  loadPage("home");
+  await loadPage("home");
 
   function setupTabs() {
     document.querySelectorAll(".tab-link").forEach(tab => {
@@ -22,25 +22,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  function loadPage(page) {
-    fetch(`src/pages/${page}.html`)
-      .then(response => {
-        if (!response.ok) throw new Error("Page not found");
-        return response.text();
-      })
-      .then(html => {
+  async function loadPage(page) {
+    try {
+        const response = await fetch(`src/pages/${page}.html`);
+
+        if (!response.ok) {
+            throw new Error("Page not found");
+        }
+
+        const html = await response.text();
         document.getElementById("tab-content").innerHTML = html;
+
         if (page === "home") {
-          setupSearchForm();
-          fetchSortingOptions();
-        };
-      })
-      .catch(error => {
+            setupSearchForm();
+            fetchSortingOptions();
+        }
+    } catch (error) {
         console.error("Error loading page:", error);
         document.getElementById("tab-content").innerHTML =
-          `<h1 class='title'>404 - Page Not Found</h1><p>The content you requested does not exist.</p>`;
-      });
-  }
+            `<h1 class='title'>404 - Page Not Found</h1><p>The content you requested does not exist.</p>`;
+    }
+}
+
 
   function setupSearchForm() {
     const form = document.getElementById("search-form");
